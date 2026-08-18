@@ -206,3 +206,142 @@ export async function deleteUser(token: string, id: string): Promise<void> {
   const response = await authFetch(token, `/admin/users/${id}`, { method: "DELETE" });
   await parseJsonOrThrow<void>(response);
 }
+
+export interface ShoppingList {
+  id: string;
+  user_id: string;
+  title: string | null;
+  created_at: string;
+}
+
+export interface ShoppingListSummary extends ShoppingList {
+  item_count: number;
+}
+
+export interface ShoppingListItem {
+  id: string;
+  list_id: string;
+  product_name: string;
+  quantity: string;
+}
+
+export async function listShoppingLists(token: string): Promise<ShoppingListSummary[]> {
+  const response = await authFetch(token, "/lists");
+  const data = await parseJsonOrThrow<{ lists: ShoppingListSummary[] }>(response);
+  return data.lists;
+}
+
+export async function createShoppingList(
+  token: string,
+  title?: string
+): Promise<ShoppingList> {
+  const response = await authFetch(token, "/lists", { method: "POST", body: { title } });
+  const data = await parseJsonOrThrow<{ list: ShoppingList }>(response);
+  return data.list;
+}
+
+export async function getShoppingList(
+  token: string,
+  id: string
+): Promise<{ list: ShoppingList; items: ShoppingListItem[] }> {
+  const response = await authFetch(token, `/lists/${id}`);
+  return parseJsonOrThrow(response);
+}
+
+export async function updateShoppingList(
+  token: string,
+  id: string,
+  title: string
+): Promise<ShoppingList> {
+  const response = await authFetch(token, `/lists/${id}`, { method: "PUT", body: { title } });
+  const data = await parseJsonOrThrow<{ list: ShoppingList }>(response);
+  return data.list;
+}
+
+export async function deleteShoppingList(token: string, id: string): Promise<void> {
+  const response = await authFetch(token, `/lists/${id}`, { method: "DELETE" });
+  await parseJsonOrThrow<void>(response);
+}
+
+export async function addShoppingListItem(
+  token: string,
+  listId: string,
+  input: { product_name: string; quantity?: number }
+): Promise<ShoppingListItem[]> {
+  const response = await authFetch(token, `/lists/${listId}/items`, {
+    method: "POST",
+    body: input,
+  });
+  const data = await parseJsonOrThrow<{ items: ShoppingListItem[] }>(response);
+  return data.items;
+}
+
+export async function updateShoppingListItem(
+  token: string,
+  listId: string,
+  itemId: string,
+  input: { product_name?: string; quantity?: number }
+): Promise<ShoppingListItem> {
+  const response = await authFetch(token, `/lists/${listId}/items/${itemId}`, {
+    method: "PUT",
+    body: input,
+  });
+  const data = await parseJsonOrThrow<{ item: ShoppingListItem }>(response);
+  return data.item;
+}
+
+export async function deleteShoppingListItem(
+  token: string,
+  listId: string,
+  itemId: string
+): Promise<void> {
+  const response = await authFetch(token, `/lists/${listId}/items/${itemId}`, {
+    method: "DELETE",
+  });
+  await parseJsonOrThrow<void>(response);
+}
+
+export interface ItemOffer {
+  supermarket_id: string;
+  supermarket_name: string;
+  available: boolean;
+  matched_product_name: string | null;
+  unit_price: number | null;
+  quantity: number;
+  subtotal: number | null;
+  is_cheapest: boolean;
+}
+
+export interface ItemComparison {
+  item_id: string;
+  product_name: string;
+  quantity: number;
+  offers: ItemOffer[];
+  cheapest_supermarket_id: string | null;
+  cheapest_price: number | null;
+}
+
+export interface SupermarketBasket {
+  supermarket_id: string;
+  supermarket_name: string;
+  unit_name: string;
+  total: number;
+  items_found: number;
+  items_total: number;
+  is_winner: boolean;
+  savings_vs_most_expensive: number;
+  rank: number;
+}
+
+export interface ComparisonResult {
+  items: ItemComparison[];
+  supermarkets: SupermarketBasket[];
+  winner: SupermarketBasket | null;
+  max_savings: number;
+  has_any_result: boolean;
+}
+
+export async function compareShoppingList(token: string, listId: string): Promise<ComparisonResult> {
+  const response = await authFetch(token, `/lists/${listId}/compare`);
+  return parseJsonOrThrow(response);
+}

@@ -1,6 +1,11 @@
 import { PoolClient } from "pg";
 import { pool } from "../db/pool";
-import { ProductInput } from "../models/product";
+import { Product, ProductInput } from "../models/product";
+
+export async function listAllProducts(): Promise<Product[]> {
+  const result = await pool.query<Product>("SELECT * FROM products ORDER BY supermarket_id ASC");
+  return result.rows;
+}
 
 export async function replaceProductsForSupermarket(
   supermarketId: string,

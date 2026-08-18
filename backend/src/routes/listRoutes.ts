@@ -1,19 +1,34 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import { authenticate } from "../middlewares/authenticate";
+import { asyncHandler } from "../utils/asyncHandler";
+import {
+  addItemsHandler,
+  compareListHandler,
+  createListHandler,
+  deleteItemHandler,
+  deleteListHandler,
+  getListHandler,
+  listListsHandler,
+  pdfListHandler,
+  updateItemHandler,
+  updateListHandler,
+} from "../controllers/listController";
 
 const router = Router();
 
 router.use(authenticate);
 
-function notImplemented(_req: Request, res: Response): void {
-  res.status(501).json({ error: "Not implemented yet" });
-}
+router.get("/", asyncHandler(listListsHandler));
+router.post("/", asyncHandler(createListHandler));
+router.get("/:id", asyncHandler(getListHandler));
+router.put("/:id", asyncHandler(updateListHandler));
+router.delete("/:id", asyncHandler(deleteListHandler));
 
-router.get("/", notImplemented);
-router.post("/", notImplemented);
-router.get("/:id", notImplemented);
-router.put("/:id", notImplemented);
-router.delete("/:id", notImplemented);
-router.get("/:id/compare", notImplemented);
+router.post("/:id/items", asyncHandler(addItemsHandler));
+router.put("/:id/items/:itemId", asyncHandler(updateItemHandler));
+router.delete("/:id/items/:itemId", asyncHandler(deleteItemHandler));
+
+router.get("/:id/compare", asyncHandler(compareListHandler));
+router.get("/:id/pdf", asyncHandler(pdfListHandler));
 
 export default router;
