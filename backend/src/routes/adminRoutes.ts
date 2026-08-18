@@ -10,14 +10,16 @@ import {
   updateSupermarketHandler,
   uploadProductsHandler,
 } from "../controllers/supermarketController";
+import {
+  createUserHandler,
+  deleteUserHandler,
+  listUsersHandler,
+  updateUserHandler,
+} from "../controllers/userController";
 
 const router = Router();
 
 router.use(authenticate, requireRole("admin"));
-
-function notImplemented(_req: Request, res: Response): void {
-  res.status(501).json({ error: "Not implemented yet" });
-}
 
 function handleUploadMiddleware(req: Request, res: Response, next: NextFunction): void {
   uploadSpreadsheet(req, res, (err: unknown) => {
@@ -39,7 +41,9 @@ router.post(
   asyncHandler(uploadProductsHandler)
 );
 
-router.get("/users", notImplemented);
-router.put("/users/:id", notImplemented);
+router.get("/users", asyncHandler(listUsersHandler));
+router.post("/users", asyncHandler(createUserHandler));
+router.put("/users/:id", asyncHandler(updateUserHandler));
+router.delete("/users/:id", asyncHandler(deleteUserHandler));
 
 export default router;

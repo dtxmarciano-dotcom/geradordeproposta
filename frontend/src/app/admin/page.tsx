@@ -1,47 +1,65 @@
 "use client";
 
-import { VanttaLogo } from "@/components/brand/VanttaLogo";
-import { Button } from "@/components/ui/Button";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Card } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { Alert } from "@/components/ui/Alert";
 import { useAuth } from "@/lib/auth-context";
-import { useRequireAuth } from "@/lib/useRequireAuth";
+import { listSupermarkets, listUsers, ApiError } from "@/lib/api";
 
 export default function AdminHomePage() {
-  const { isLoading } = useRequireAuth("admin");
-  const { user, logout } = useAuth();
+  const { user, token } = useAuth();
+  const [supermarketCount, setSupermarketCount] = useState<number | null>(null);
+  const [userCount, setUserCount] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  if (isLoading || !user) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <Spinner />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!token) return;
+
+    Promise.all([listSupermarkets(token), listUsers(token)])
+      .then(([supermarkets, users]) => {
+        setSupermarketCount(supermarkets.length);
+        setUserCount(users.length);
+      })
+      .catch((err) => {
+        setError(err instanceof ApiError ? err.message : "Não foi possível carregar o resumo.");
+      });
+  }, [token]);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <VanttaLogo />
-        <Button variant="ghost" size="sm" onClick={logout}>
-          Sair
-        </Button>
-      </header>
+    <div className="flex flex-col gap-8">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Bem-vindo(a), {user?.name}</h1>
+        <p className="mt-1 text-sm text-neutral-500">
+          Painel administrativo do Vantta: gerencie supermercados, planilhas de preço e usuários.
+        </p>
+      </div>
 
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-12">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Bem-vindo(a), {user.name}</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            Painel administrativo. Cadastro de supermercados, upload de planilhas e gestão de
-            usuários chegam nas próximas etapas de interface.
-          </p>
-        </div>
+      {error ? <Alert variant="error">{error}</Alert> : null}
 
-        <EmptyState
-          title="Nenhum supermercado cadastrado ainda"
-          description="A tela de cadastro de supermercados e upload de planilhas de preço é a próxima etapa do frontend."
-        />
-      </main>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Link href="/admin/supermarkets">
+          <Card className="flex flex-col gap-2 transition-shadow hover:shadow-md">
+            <p className="text-sm text-neutral-500">Supermercados cadastrados</p>
+            {supermarketCount === null && !error ? (
+              <Spinner size="sm" />
+            ) : (
+              <p className="text-3xl font-bold text-foreground">{supermarketCount ?? "—"}</p>
+            )}
+          </Card>
+        </Link>
+        <Link href="/admin/users">
+          <Card className="flex flex-col gap-2 transition-shadow hover:shadow-md">
+            <p className="text-sm text-neutral-500">Usuários cadastrados</p>
+            {userCount === null && !error ? (
+              <Spinner size="sm" />
+            ) : (
+              <p className="text-3xl font-bold text-foreground">{userCount ?? "—"}</p>
+            )}
+          </Card>
+        </Link>
+      </div>
     </div>
   );
 }
