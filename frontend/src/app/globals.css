@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fafaf9;
+  --foreground: #14181a;
+  --surface: #ffffff;
+  --surface-muted: #f4f4f5;
+  --border: #e4e4e7;
+
+  --vantta-50: #ecfdf5;
+  --vantta-100: #d1fae5;
+  --vantta-200: #a7f3d0;
+  --vantta-300: #6ee7b7;
+  --vantta-400: #34d399;
+  --vantta-500: #22c55e;
+  --vantta-600: #16a34a;
+  --vantta-700: #15803d;
+  --vantta-800: #166534;
+  --vantta-900: #0f2419;
+  --vantta-950: #0b1f17;
+
+  --neutral-50: #fafafa;
+  --neutral-100: #f4f4f5;
+  --neutral-200: #e4e4e7;
+  --neutral-300: #d4d4d8;
+  --neutral-400: #a1a1aa;
+  --neutral-500: #71717a;
+  --neutral-600: #52525b;
+  --neutral-700: #3f3f46;
+  --neutral-800: #27272a;
+  --neutral-900: #18181b;
+  --neutral-950: #0b0b0c;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+
+  --color-vantta-50: var(--vantta-50);
+  --color-vantta-100: var(--vantta-100);
+  --color-vantta-200: var(--vantta-200);
+  --color-vantta-300: var(--vantta-300);
+  --color-vantta-400: var(--vantta-400);
+  --color-vantta-500: var(--vantta-500);
+  --color-vantta-600: var(--vantta-600);
+  --color-vantta-700: var(--vantta-700);
+  --color-vantta-800: var(--vantta-800);
+  --color-vantta-900: var(--vantta-900);
+  --color-vantta-950: var(--vantta-950);
+
+  --color-neutral-50: var(--neutral-50);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-200: var(--neutral-200);
+  --color-neutral-300: var(--neutral-300);
+  --color-neutral-400: var(--neutral-400);
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-600: var(--neutral-600);
+  --color-neutral-700: var(--neutral-700);
+  --color-neutral-800: var(--neutral-800);
+  --color-neutral-900: var(--neutral-900);
+  --color-neutral-950: var(--neutral-950);
+
+  --font-sans: var(--font-inter);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: var(--vantta-950);
+    --foreground: #f4f4f5;
+    --surface: #12241c;
+    --surface-muted: #16281f;
+    --border: #1e332a;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
