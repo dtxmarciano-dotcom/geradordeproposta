@@ -16,6 +16,7 @@ import {
   ComparisonResult,
   ItemComparison,
   compareShoppingList,
+  downloadShoppingListPdf,
   getShoppingList,
 } from "@/lib/api";
 
@@ -32,6 +33,8 @@ export default function ComparePage() {
   const [result, setResult] = useState<ComparisonResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!token || !id) return;
@@ -59,6 +62,21 @@ export default function ComparePage() {
   }, [load]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  async function handleDownloadPdf() {
+    if (!token || !id) return;
+    setIsDownloading(true);
+    setDownloadError(null);
+    try {
+      await downloadShoppingListPdf(token, id);
+    } catch (err) {
+      setDownloadError(
+        err instanceof ApiError ? err.message : "Não foi possível gerar o PDF agora."
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  }
+
   if (authLoading || !user) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -71,10 +89,28 @@ export default function ComparePage() {
     <div className="flex flex-1 flex-col">
       <AppHeader />
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-10">
-        <div>
-          <p className="text-sm text-neutral-500">{listTitle || "Sua lista"}</p>
-          <h1 className="text-2xl font-bold text-foreground">Comparação de preços</h1>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-neutral-500">{listTitle || "Sua lista"}</p>
+            <h1 className="text-2xl font-bold text-foreground">Comparação de preços</h1>
+          </div>
+          {!isLoading && !error && result?.has_any_result ? (
+            <Button
+              variant="secondary"
+              onClick={handleDownloadPdf}
+              disabled={isDownloading}
+              aria-busy={isDownloading}
+            >
+              {isDownloading ? "Gerando PDF..." : "Exportar PDF"}
+            </Button>
+          ) : null}
         </div>
+
+        {downloadError ? (
+          <Alert variant="error" title="Não foi possível baixar o PDF">
+            {downloadError}
+          </Alert>
+        ) : null}
 
         {isLoading ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 py-24">

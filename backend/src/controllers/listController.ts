@@ -13,6 +13,7 @@ import {
   removeList,
   renameList,
 } from "../services/listService";
+import { generateComparisonPdf } from "../utils/pdfGenerator";
 
 const createListSchema = z.object({
   title: z.string().trim().min(1).optional(),
@@ -142,6 +143,32 @@ export async function compareListHandler(req: Request, res: Response): Promise<v
   }
 }
 
-export async function pdfListHandler(_req: Request, res: Response): Promise<void> {
-  res.status(501).json({ error: "Geração de PDF ainda não implementada. Chega na próxima etapa." });
+function slugify(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "") || "lista";
+}
+
+export async function pdfListHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const { list } = await getListDetail(req.params.id, req.auth!.id);
+    const result = await compareList(req.params.id, req.auth!.id);
+    const title = list.title || "Lista de compras";
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="vantta-${slugify(title)}.pdf"`
+    );
+
+    const doc = generateComparisonPdf(title, result);
+    doc.pipe(res);
+    doc.end();
+  } catch (error) {
+    if (handleNotFound(error, res)) return;
+    throw error;
+  }
 }

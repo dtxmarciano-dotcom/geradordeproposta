@@ -216,13 +216,14 @@ function ItemRow({
           const parsed = Number(quantity.replace(",", "."));
           if (Number.isFinite(parsed) && parsed > 0) onQuantityChange(parsed);
         }}
-        className="w-20 rounded-lg border border-border bg-surface px-2 py-1 text-right text-sm focus:outline-none focus:ring-2 focus:ring-vantta-400"
+        aria-label={`Quantidade de ${item.product_name}`}
+        className="w-20 rounded-lg border border-border bg-surface px-2 py-2 text-right text-sm focus:outline-none focus:ring-2 focus:ring-vantta-400"
       />
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remover ${item.product_name}`}
-        className="rounded-lg px-2 py-1 text-sm text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600"
+        className="min-h-9 min-w-9 rounded-lg px-2 py-2 text-sm text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600"
       >
         Remover
       </button>

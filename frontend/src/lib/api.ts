@@ -345,3 +345,34 @@ export async function compareShoppingList(token: string, listId: string): Promis
   const response = await authFetch(token, `/lists/${listId}/compare`);
   return parseJsonOrThrow(response);
 }
+
+function filenameFromContentDisposition(header: string | null): string | null {
+  if (!header) return null;
+  const match = /filename="?([^";]+)"?/.exec(header);
+  return match ? match[1] : null;
+}
+
+export async function downloadShoppingListPdf(token: string, listId: string): Promise<void> {
+  const response = await authFetch(token, `/lists/${listId}/pdf`);
+  if (!response.ok) {
+    let message = humanizeGenericError(response.status);
+    try {
+      const body = (await response.json()) as { error?: string };
+      if (body?.error) message = body.error;
+    } catch {
+      // resposta sem corpo JSON, mantém mensagem genérica
+    }
+    throw new ApiError(message, response.status);
+  }
+
+  const blob = await response.blob();
+  const filename = filenameFromContentDisposition(response.headers.get("Content-Disposition")) ?? `vantta-lista-${listId}.pdf`;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
