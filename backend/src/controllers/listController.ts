@@ -164,7 +164,7 @@ export async function pdfListHandler(req: Request, res: Response): Promise<void>
       `attachment; filename="vantta-${slugify(title)}.pdf"`
     );
 
-    const doc = generateComparisonPdf(title, result);
+    const doc = await generateComparisonPdf(title, result);
     doc.pipe(res);
     doc.end();
   } catch (error) {

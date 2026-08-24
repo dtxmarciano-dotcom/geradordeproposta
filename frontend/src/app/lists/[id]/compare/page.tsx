@@ -189,6 +189,14 @@ function ComparisonView({ result }: { result: ComparisonResult }) {
                   >
                     {basket.rank}
                   </span>
+                  {basket.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={basket.logo_url}
+                      alt={`Logo de ${basket.supermarket_name}`}
+                      className="h-9 w-9 rounded-lg border border-neutral-200 object-contain bg-white"
+                    />
+                  ) : null}
                   <div>
                     <p className="font-semibold text-foreground">{basket.supermarket_name}</p>
                     <p className="text-xs text-neutral-500">{basket.unit_name}</p>

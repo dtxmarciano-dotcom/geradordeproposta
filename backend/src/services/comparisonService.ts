@@ -10,6 +10,7 @@ export interface ComparisonSupermarket {
   id: string;
   name: string;
   unit_name: string;
+  logo_url: string | null;
 }
 
 export interface ComparisonProduct extends MatchCandidate {
@@ -40,6 +41,7 @@ export interface SupermarketBasketResult {
   supermarket_id: string;
   supermarket_name: string;
   unit_name: string;
+  logo_url: string | null;
   total: number;
   items_found: number;
   items_total: number;
@@ -135,6 +137,7 @@ export function compareShoppingList(
       supermarket_id: supermarket.id,
       supermarket_name: supermarket.name,
       unit_name: supermarket.unit_name,
+      logo_url: supermarket.logo_url,
       total: round2(total),
       items_found: itemsFound,
       items_total: items.length,
