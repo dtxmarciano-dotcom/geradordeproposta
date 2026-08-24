@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -16,6 +16,7 @@ import {
   deleteSupermarket,
   listSupermarkets,
   updateSupermarket,
+  uploadSupermarketLogo,
 } from "@/lib/api";
 import { UploadModal } from "./UploadModal";
 
@@ -176,6 +177,25 @@ function SupermarketFormModal({
   const [logoUrl, setLogoUrl] = useState(isNew ? "" : (target.logo_url ?? ""));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+
+  async function handleLogoFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || isNew || !token) return;
+
+    setIsUploadingLogo(true);
+    setLogoError(null);
+    try {
+      const updated = await uploadSupermarketLogo(token, target.id, file);
+      setLogoUrl(updated.logo_url ?? "");
+    } catch (err) {
+      setLogoError(err instanceof ApiError ? err.message : "Não foi possível enviar a imagem.");
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -226,14 +246,46 @@ function SupermarketFormModal({
           required
           disabled={isSubmitting}
         />
-        <Input
-          label="URL do logo (opcional)"
-          type="url"
-          placeholder="https://..."
-          value={logoUrl}
-          onChange={(e) => setLogoUrl(e.target.value)}
-          disabled={isSubmitting}
-        />
+        {isNew ? (
+          <p className="rounded-lg bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
+            Você poderá enviar a imagem da logomarca depois, editando o supermercado
+            recém-criado.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-foreground">Logomarca</span>
+            <div className="flex items-center gap-3">
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={logoUrl}
+                  alt={`Logo de ${target.name}`}
+                  className="h-12 w-12 rounded-lg border border-neutral-200 object-contain"
+                />
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-neutral-300 text-xs text-neutral-400">
+                  Sem logo
+                </div>
+              )}
+              <label className="inline-flex cursor-pointer items-center rounded-lg border border-neutral-200 px-3 py-2 text-sm font-medium text-foreground hover:bg-neutral-50">
+                {isUploadingLogo ? "Enviando..." : "Escolher imagem"}
+                <input
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="hidden"
+                  disabled={isUploadingLogo || isSubmitting}
+                  onChange={handleLogoFileChange}
+                />
+              </label>
+            </div>
+            <p className="text-xs text-neutral-400">PNG, JPG, WEBP ou SVG, até 2MB.</p>
+            {logoError ? (
+              <Alert variant="error" className="mt-1">
+                {logoError}
+              </Alert>
+            ) : null}
+          </div>
+        )}
         <div className="mt-2 flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
             Cancelar

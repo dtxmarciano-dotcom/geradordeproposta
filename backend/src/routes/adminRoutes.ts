@@ -2,12 +2,14 @@ import { Router, Request, Response, NextFunction } from "express";
 import { authenticate } from "../middlewares/authenticate";
 import { requireRole } from "../middlewares/requireRole";
 import { uploadSpreadsheet } from "../middlewares/uploadSpreadsheet";
+import { uploadLogo } from "../middlewares/uploadLogo";
 import { asyncHandler } from "../utils/asyncHandler";
 import {
   createSupermarketHandler,
   deleteSupermarketHandler,
   listSupermarketsHandler,
   updateSupermarketHandler,
+  uploadLogoHandler,
   uploadProductsHandler,
 } from "../controllers/supermarketController";
 import {
@@ -31,6 +33,16 @@ function handleUploadMiddleware(req: Request, res: Response, next: NextFunction)
   });
 }
 
+function handleLogoUploadMiddleware(req: Request, res: Response, next: NextFunction): void {
+  uploadLogo(req, res, (err: unknown) => {
+    if (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : "Upload error" });
+      return;
+    }
+    next();
+  });
+}
+
 router.get("/supermarkets", asyncHandler(listSupermarketsHandler));
 router.post("/supermarkets", asyncHandler(createSupermarketHandler));
 router.put("/supermarkets/:id", asyncHandler(updateSupermarketHandler));
@@ -39,6 +51,11 @@ router.post(
   "/supermarkets/:id/products/upload",
   handleUploadMiddleware,
   asyncHandler(uploadProductsHandler)
+);
+router.post(
+  "/supermarkets/:id/logo",
+  handleLogoUploadMiddleware,
+  asyncHandler(uploadLogoHandler)
 );
 
 router.get("/users", asyncHandler(listUsersHandler));

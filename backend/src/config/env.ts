@@ -22,4 +22,7 @@ export const env = {
   seedAdminName: process.env.SEED_ADMIN_NAME ?? "Admin",
   seedAdminEmail: process.env.SEED_ADMIN_EMAIL ?? "admin@vantta.com",
   seedAdminPassword: process.env.SEED_ADMIN_PASSWORD ?? "admin12345",
+  // Base pública da API, usada para montar a URL absoluta de arquivos enviados
+  // (ex: logo). Se ausente, é derivada da própria requisição (protocol + host).
+  publicUrl: process.env.PUBLIC_URL,
 };

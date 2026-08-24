@@ -42,6 +42,18 @@ export async function registerSupermarket(input: {
   return createSupermarket(input);
 }
 
+export async function attachSupermarketLogo(
+  id: string,
+  logoUrl: string
+): Promise<Supermarket> {
+  await getSupermarketOrThrow(id);
+  const updated = await updateSupermarket(id, { logoUrl });
+  if (!updated) {
+    throw new SupermarketNotFoundError();
+  }
+  return updated;
+}
+
 export async function editSupermarket(
   id: string,
   input: { name?: string; unitName?: string; logoUrl?: string | null }
