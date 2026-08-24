@@ -158,7 +158,12 @@ export async function compareList(listId: string, userId: string): Promise<Compa
       product_name: item.product_name,
       quantity: Number(item.quantity),
     })),
-    supermarkets.map((s) => ({ id: s.id, name: s.name, unit_name: s.unit_name })),
+    supermarkets.map((s) => ({
+      id: s.id,
+      name: s.name,
+      unit_name: s.unit_name,
+      logo_url: s.logo_url,
+    })),
     productsBySupermarket
   );
 }

@@ -341,6 +341,7 @@ export interface SupermarketBasket {
   supermarket_id: string;
   supermarket_name: string;
   unit_name: string;
+  logo_url: string | null;
   total: number;
   items_found: number;
   items_total: number;

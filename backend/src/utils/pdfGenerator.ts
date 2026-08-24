@@ -1,9 +1,52 @@
+import fs from "fs/promises";
+import path from "path";
 import PDFDocument from "pdfkit";
-import { ComparisonResult } from "../services/comparisonService";
+import { ComparisonResult, SupermarketBasketResult } from "../services/comparisonService";
+import { LOGOS_DIR } from "../middlewares/uploadLogo";
 
 const GREEN = "#15803d";
 const DARK = "#14181a";
 const MUTED = "#71717a";
+
+// pdfkit só embute raster (PNG/JPEG), não SVG — logos enviadas em SVG
+// aparecem só com o nome do supermercado, sem a imagem, no PDF.
+const EMBEDDABLE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
+
+async function loadLogoBuffer(logoUrl: string | null): Promise<Buffer | null> {
+  if (!logoUrl) return null;
+
+  const extension = path.extname(logoUrl).toLowerCase();
+  if (!EMBEDDABLE_EXTENSIONS.has(extension)) return null;
+
+  try {
+    const url = new URL(logoUrl);
+    if (url.pathname.startsWith("/uploads/logos/")) {
+      const filename = path.basename(url.pathname);
+      return await fs.readFile(path.join(LOGOS_DIR, filename));
+    }
+    const response = await fetch(logoUrl);
+    if (!response.ok) return null;
+    return Buffer.from(await response.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+async function loadLogos(
+  baskets: SupermarketBasketResult[]
+): Promise<Map<string, Buffer>> {
+  const entries = await Promise.all(
+    baskets.map(async (basket) => {
+      const buffer = await loadLogoBuffer(basket.logo_url);
+      return [basket.supermarket_id, buffer] as const;
+    })
+  );
+  const map = new Map<string, Buffer>();
+  for (const [id, buffer] of entries) {
+    if (buffer) map.set(id, buffer);
+  }
+  return map;
+}
 
 function formatCurrency(value: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -15,7 +58,10 @@ function formatDate(date: Date): string {
 
 // Gera o PDF a partir do resultado já calculado pelo comparisonService — não
 // recalcula preços aqui, apenas formata o que já foi produzido por /compare.
-export function generateComparisonPdf(listTitle: string, result: ComparisonResult): PDFKit.PDFDocument {
+export async function generateComparisonPdf(
+  listTitle: string,
+  result: ComparisonResult
+): Promise<PDFKit.PDFDocument> {
   const doc = new PDFDocument({ size: "A4", margin: 50, bufferPages: true });
 
   drawHeader(doc, listTitle);
@@ -32,8 +78,10 @@ export function generateComparisonPdf(listTitle: string, result: ComparisonResul
     return doc;
   }
 
+  const logosBySupermarket = await loadLogos(result.supermarkets);
+
   drawSummary(doc, result);
-  drawSupermarketTable(doc, result);
+  drawSupermarketTable(doc, result, logosBySupermarket);
   drawItemsTable(doc, result);
   drawFooter(doc);
 
@@ -108,10 +156,15 @@ function drawSummary(doc: PDFKit.PDFDocument, result: ComparisonResult): void {
   doc.fillColor(DARK).moveDown(1);
 }
 
-function drawSupermarketTable(doc: PDFKit.PDFDocument, result: ComparisonResult): void {
+function drawSupermarketTable(
+  doc: PDFKit.PDFDocument,
+  result: ComparisonResult,
+  logosBySupermarket: Map<string, Buffer>
+): void {
   doc.fontSize(13).font("Helvetica-Bold").fillColor(DARK).text("Comparação por supermercado");
   doc.moveDown(0.4);
 
+  const LOGO_SIZE = 20;
   const columns = [
     { label: "Supermercado", width: 170 },
     { label: "Total", width: 90 },
@@ -119,18 +172,28 @@ function drawSupermarketTable(doc: PDFKit.PDFDocument, result: ComparisonResult)
     { label: "Economia vs. mais caro", width: 125 },
   ];
 
-  drawTableHeader(doc, columns);
+  drawTableHeader(doc, columns, LOGO_SIZE);
 
   for (const basket of result.supermarkets) {
-    ensureSpace(doc, 20);
+    ensureSpace(doc, 26);
     const startX = doc.page.margins.left;
     const y = doc.y;
     let x = startX;
 
+    const logo = logosBySupermarket.get(basket.supermarket_id);
+    if (logo) {
+      try {
+        doc.image(logo, x, y - 2, { fit: [LOGO_SIZE, LOGO_SIZE] });
+      } catch {
+        // Arquivo corrompido/formato inesperado: segue sem a imagem.
+      }
+    }
+    const nameX = x + LOGO_SIZE + 6;
+
     doc.font(basket.is_winner ? "Helvetica-Bold" : "Helvetica").fontSize(10);
     doc.fillColor(basket.is_winner ? GREEN : DARK);
-    doc.text(basket.supermarket_name + (basket.is_winner ? " (melhor preço)" : ""), x, y, {
-      width: columns[0].width,
+    doc.text(basket.supermarket_name + (basket.is_winner ? " (melhor preço)" : ""), nameX, y, {
+      width: columns[0].width - LOGO_SIZE - 6,
     });
     x += columns[0].width;
 
@@ -147,7 +210,7 @@ function drawSupermarketTable(doc: PDFKit.PDFDocument, result: ComparisonResult)
       { width: columns[3].width }
     );
 
-    doc.moveDown(0.7);
+    doc.moveDown(0.9);
     doc.fillColor(DARK).font("Helvetica");
   }
 
@@ -156,15 +219,22 @@ function drawSupermarketTable(doc: PDFKit.PDFDocument, result: ComparisonResult)
   doc.moveDown(0.8);
 }
 
-function drawTableHeader(doc: PDFKit.PDFDocument, columns: { label: string; width: number }[]): void {
+function drawTableHeader(
+  doc: PDFKit.PDFDocument,
+  columns: { label: string; width: number }[],
+  firstColumnOffset = 0
+): void {
   const startX = doc.page.margins.left;
   const y = doc.y;
   let x = startX;
   doc.font("Helvetica-Bold").fontSize(9).fillColor(MUTED);
-  for (const col of columns) {
-    doc.text(col.label.toUpperCase(), x, y, { width: col.width });
+  columns.forEach((col, index) => {
+    const columnX = index === 0 ? x + firstColumnOffset : x;
+    doc.text(col.label.toUpperCase(), columnX, y, {
+      width: index === 0 ? col.width - firstColumnOffset : col.width,
+    });
     x += col.width;
-  }
+  });
   doc.moveDown(0.6);
   doc.fillColor(DARK).font("Helvetica");
 }

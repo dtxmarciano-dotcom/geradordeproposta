@@ -6,8 +6,8 @@ import {
 } from "../services/comparisonService";
 
 const supermarkets: ComparisonSupermarket[] = [
-  { id: "s1", name: "Mercado A", unit_name: "Centro" },
-  { id: "s2", name: "Mercado B", unit_name: "Norte" },
+  { id: "s1", name: "Mercado A", unit_name: "Centro", logo_url: null },
+  { id: "s2", name: "Mercado B", unit_name: "Norte", logo_url: null },
 ];
 
 const productsBySupermarket = new Map<string, ComparisonProduct[]>([

@@ -110,12 +110,26 @@ export default function SupermarketsPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           {supermarkets.map((supermarket) => (
             <Card key={supermarket.id} className="flex flex-col gap-4">
-              <div>
-                <h3 className="text-base font-semibold text-foreground">{supermarket.name}</h3>
-                <p className="text-sm text-neutral-500">{supermarket.unit_name}</p>
-                <p className="mt-2 text-xs text-neutral-400">
-                  Atualizado em {formatDate(supermarket.updated_at)}
-                </p>
+              <div className="flex items-start gap-3">
+                {supermarket.logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={supermarket.logo_url}
+                    alt={`Logo de ${supermarket.name}`}
+                    className="h-12 w-12 shrink-0 rounded-lg border border-neutral-200 object-contain bg-white"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-neutral-300 text-[10px] text-neutral-400">
+                    Sem logo
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-base font-semibold text-foreground">{supermarket.name}</h3>
+                  <p className="text-sm text-neutral-500">{supermarket.unit_name}</p>
+                  <p className="mt-2 text-xs text-neutral-400">
+                    Atualizado em {formatDate(supermarket.updated_at)}
+                  </p>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => setUploadTarget(supermarket)}>
