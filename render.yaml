@@ -19,6 +19,8 @@ services:
         value: production
       - key: CORS_ORIGIN
         sync: false
+      - key: PUBLIC_URL
+        sync: false
       - key: SEED_ADMIN_NAME
         value: Admin
       - key: SEED_ADMIN_EMAIL

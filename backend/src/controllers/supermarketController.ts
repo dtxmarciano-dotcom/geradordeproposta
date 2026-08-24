@@ -13,7 +13,11 @@ import { MissingColumnsError } from "../utils/spreadsheetParser";
 import { env } from "../config/env";
 
 function buildPublicUrl(req: Request, relativePath: string): string {
-  const base = env.publicUrl ?? `${req.protocol}://${req.get("host")}`;
+  // Em produção, força https mesmo que req.protocol venha errado por algum
+  // detalhe do proxy — evita gerar URL http:// que o navegador bloqueia como
+  // conteúdo misto numa página https (ex: frontend na Vercel).
+  const protocol = env.nodeEnv === "production" ? "https" : req.protocol;
+  const base = env.publicUrl ?? `${protocol}://${req.get("host")}`;
   return `${base.replace(/\/$/, "")}${relativePath}`;
 }
 
