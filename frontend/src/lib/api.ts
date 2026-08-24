@@ -171,6 +171,22 @@ export async function uploadSupermarketProducts(
   return parseJsonOrThrow<UploadResult>(response);
 }
 
+export async function uploadSupermarketLogo(
+  token: string,
+  id: string,
+  file: File
+): Promise<Supermarket> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await authFetch(token, `/admin/supermarkets/${id}/logo`, {
+    method: "POST",
+    body: formData,
+    isFormData: true,
+  });
+  const data = await parseJsonOrThrow<{ supermarket: Supermarket }>(response);
+  return data.supermarket;
+}
+
 export async function listUsers(token: string): Promise<AdminUser[]> {
   const response = await authFetch(token, "/admin/users");
   const data = await parseJsonOrThrow<{ users: AdminUser[] }>(response);

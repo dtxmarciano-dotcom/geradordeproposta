@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import {
+  attachSupermarketLogo,
   editSupermarket,
   getSupermarkets,
   importProductsFromFile,
@@ -9,6 +10,12 @@ import {
   SupermarketNotFoundError,
 } from "../services/supermarketService";
 import { MissingColumnsError } from "../utils/spreadsheetParser";
+import { env } from "../config/env";
+
+function buildPublicUrl(req: Request, relativePath: string): string {
+  const base = env.publicUrl ?? `${req.protocol}://${req.get("host")}`;
+  return `${base.replace(/\/$/, "")}${relativePath}`;
+}
 
 const createSchema = z.object({
   name: z.string().trim().min(1, "Nome é obrigatório"),
@@ -76,6 +83,26 @@ export async function deleteSupermarketHandler(req: Request, res: Response): Pro
   try {
     await removeSupermarket(req.params.id);
     res.status(204).send();
+  } catch (error) {
+    if (error instanceof SupermarketNotFoundError) {
+      res.status(404).json({ error: "Supermarket not found" });
+      return;
+    }
+    throw error;
+  }
+}
+
+export async function uploadLogoHandler(req: Request, res: Response): Promise<void> {
+  const file = req.file;
+  if (!file) {
+    res.status(400).json({ error: "No file uploaded. Send a multipart field named 'file'." });
+    return;
+  }
+
+  try {
+    const logoUrl = buildPublicUrl(req, `/uploads/logos/${file.filename}`);
+    const supermarket = await attachSupermarketLogo(req.params.id, logoUrl);
+    res.status(200).json({ supermarket });
   } catch (error) {
     if (error instanceof SupermarketNotFoundError) {
       res.status(404).json({ error: "Supermarket not found" });
