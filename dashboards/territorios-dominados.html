@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Territórios Dominados — O.CRM</title>
+<meta name="description" content="Dashboard executivo para TV da sala comercial, tema mapa de reino gamificado, com dados reais do OCRM (pipeline Outbound Clientes).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e17; --surface:#121828; --surface-2:#182140; --border:#232d49;
+    --text:#eef1f8; --muted:#8c96b3; --muted-2:#5d6688;
+    --accent:#f2b84b; --accent-2:#d89b2c; --accent-dim:#7a5d21;
+    --good:#34d399; --good-dim:#0d3327;
+    --warn:#f2b84b; --warn-dim:#3a2c0d;
+    --bad:#f2555f;  --bad-dim:#3a1418;
+    --locked:#4b5372;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    font-variant-numeric:tabular-nums;
+    overflow:hidden;
+  }
+  h1,h2,h3{font-family:'Sora',system-ui,sans-serif; margin:0}
+  ::selection{background:var(--accent); color:#1a1305}
+  button{font-family:inherit}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+  /* ================= APP SHELL ================= */
+  .app{display:grid; grid-template-columns:220px 1fr; height:100vh; width:100vw}
+  @media (max-width:1100px){ .app{grid-template-columns:74px 1fr} }
+
+  /* ---------- sidebar ---------- */
+  .sidebar{
+    background:#070a12; border-right:1px solid var(--border);
+    display:flex; flex-direction:column; padding:20px 14px; gap:4px;
+  }
+  .sb-logo{display:flex; align-items:center; gap:10px; padding:0 6px 22px; font-family:'Sora',sans-serif; font-weight:800; font-size:20px}
+  .sb-logo .dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+  .sb-nav{display:flex; flex-direction:column; gap:4px; flex:1}
+  .sb-item{
+    display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:10px;
+    color:var(--muted); font-size:13.5px; font-weight:600; cursor:pointer; border:1px solid transparent;
+    background:none; text-align:left; width:100%;
+  }
+  .sb-item .ic{width:18px; text-align:center; flex:none}
+  .sb-item:hover{color:var(--text); background:var(--surface)}
+  .sb-item.active{color:var(--accent); background:var(--surface); border-color:var(--accent-dim)}
+  @media (max-width:1100px){ .sb-item span.lbl{display:none} .sb-logo span.lbl{display:none} }
+  .sb-foot{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted-2); text-align:center; padding-top:10px; border-top:1px solid var(--border); line-height:1.6}
+  @media (max-width:1100px){ .sb-foot{display:none} }
+
+  /* ---------- main ---------- */
+  .main{display:flex; flex-direction:column; height:100vh; overflow:hidden}
+
+  .topbar{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+    padding:16px 22px 10px; flex:none;
+  }
+  .topbar .title-block{display:flex; align-items:center; gap:14px}
+  .crown-badge{
+    width:46px; height:56px; border-radius:6px;
+    background:linear-gradient(160deg,var(--accent),var(--accent-2) 60%,#8a611a);
+    display:flex; align-items:center; justify-content:center; font-size:20px;
+    box-shadow:0 0 0 1px var(--accent-dim), 0 6px 18px rgba(242,184,75,.25);
+  }
+  .title-block h1{font-size:26px; font-weight:800; color:var(--accent); letter-spacing:.01em}
+  .title-block .sub{font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:2px}
+  .topbar .tagline{font-size:12.5px; color:var(--muted); text-align:right; max-width:260px; line-height:1.4}
+  .topbar .tagline b{color:var(--accent)}
+
+  .status-row{display:flex; align-items:center; justify-content:space-between; gap:14px; padding:0 22px 12px; flex:none; flex-wrap:wrap}
+  .clock-inline{display:flex; gap:18px; flex-wrap:wrap}
+  .clock-inline .block .k{font-size:10px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase}
+  .clock-inline .block .v{font-size:14px; font-weight:700; font-family:'Sora',sans-serif}
+  .staleness{font-size:11px; color:var(--muted-2)}
+  .staleness.stale{color:var(--bad)}
+  .status-actions{display:flex; gap:8px}
+  .refresh-btn{
+    background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+    border-radius:9px; padding:8px 14px; font-weight:600; font-size:12px; cursor:pointer;
+  }
+  .refresh-btn:hover{border-color:var(--accent)}
+  .cfg-btn{background:none; border:1px solid var(--border); color:var(--muted); border-radius:9px; width:34px; height:34px; cursor:pointer; font-size:14px}
+  .cfg-btn:hover{color:var(--text); border-color:var(--accent)}
+
+  /* ---------- content body: map + right panel ---------- */
+  .body-grid{display:grid; grid-template-columns:1fr 300px; gap:12px; padding:0 16px; flex:1; min-height:0}
+  @media (max-width:1300px){ .body-grid{grid-template-columns:1fr 250px} }
+
+  .map-stage{
+    position:relative; border-radius:18px; overflow:hidden; border:1px solid var(--border);
+    background:#0d1a2b;
+  }
+  .map-stage img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+  .map-fallback{position:absolute; inset:0; display:none}
+  .map-fallback.show{display:block}
+  .map-fallback svg{width:100%; height:100%}
+  .map-vignette{position:absolute; inset:0; box-shadow:inset 0 0 140px 40px rgba(0,0,0,.55); pointer-events:none}
+
+  .state-card{
+    position:absolute; width:230px; background:rgba(10,14,23,.88); backdrop-filter:blur(6px);
+    border:1px solid var(--border); border-radius:14px; padding:12px 14px; color:var(--text);
+    box-shadow:0 10px 26px rgba(0,0,0,.45);
+  }
+  .state-card.conquered{border-color:var(--good)}
+  .state-card.active{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent-dim), 0 10px 26px rgba(0,0,0,.5)}
+  .state-card.locked{opacity:.55}
+  .state-card .sc-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px}
+  .state-card .sc-name{font-family:'Sora',sans-serif; font-weight:800; font-size:13px; letter-spacing:.02em}
+  .state-card .sc-sub{font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-top:1px}
+  .state-card .sc-badge{font-size:13px}
+  .state-card .sc-row{display:flex; justify-content:space-between; font-size:11px; padding:2.5px 0; color:var(--muted)}
+  .state-card .sc-row b{color:var(--text); font-weight:700}
+  .state-card .sc-bar{height:6px; border-radius:4px; background:var(--surface-2); overflow:hidden; margin-top:8px}
+  .state-card .sc-bar-fill{height:100%; border-radius:4px; background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+  .state-card.conquered .sc-bar-fill{background:linear-gradient(90deg,#1c8a5e,var(--good))}
+  .state-card .sc-pct{display:flex; justify-content:flex-end; font-size:10.5px; color:var(--muted); margin-top:4px; font-weight:700}
+
+  /* right panel */
+  .side-panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:16px;
+    display:flex; flex-direction:column; gap:14px; overflow:auto;
+  }
+  .side-panel h2{font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:6px}
+  .sp-progress .lbl{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:6px}
+  .sp-progress-track{height:12px; border-radius:7px; background:var(--surface-2); border:1px solid var(--border); overflow:hidden; position:relative}
+  .sp-progress-fill{height:100%; border-radius:7px; background:linear-gradient(90deg,#2b6ee0,#5aa4ff)}
+  .sp-progress-pct{font-size:12px; font-weight:700; color:var(--text); margin-top:6px; text-align:right}
+
+  .sp-kpis{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .sp-kpi{background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:10px}
+  .sp-kpi .ic{font-size:15px}
+  .sp-kpi .v{font-size:14px; font-weight:800; font-family:'Sora',sans-serif; margin-top:4px}
+  .sp-kpi .k{font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-top:2px}
+
+  .sp-states{display:flex; flex-direction:column; gap:6px}
+  .sp-state-row{display:flex; align-items:center; gap:8px; font-size:11.5px; padding:6px 8px; border-radius:8px; background:var(--surface-2)}
+  .sp-state-row .badge{width:20px; text-align:center}
+  .sp-state-row .name{flex:1; font-weight:600; color:var(--text)}
+  .sp-state-row .pct{font-weight:800; color:var(--accent); font-family:'Sora',sans-serif}
+  .sp-state-row.locked .pct{color:var(--muted-2)}
+
+  /* ---------- bottom: reino bar + carousel ---------- */
+  .bottom-wrap{flex:none; padding:12px 16px 14px; display:flex; flex-direction:column; gap:10px}
+
+  .reino-bar{
+    background:var(--surface); border:1px solid var(--accent-dim); border-radius:16px;
+    padding:12px 20px; display:flex; align-items:center; gap:26px; flex-wrap:wrap;
+  }
+  .reino-bar .rb-title{display:flex; align-items:center; gap:10px; min-width:190px}
+  .reino-bar .rb-title .ic{font-size:20px}
+  .reino-bar .rb-title .t1{font-size:13px; font-weight:800; font-family:'Sora',sans-serif; color:var(--accent)}
+  .reino-bar .rb-title .t2{font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+  .rb-stats{display:flex; gap:28px; flex:1; flex-wrap:wrap}
+  .rb-stat{display:flex; align-items:center; gap:8px}
+  .rb-stat .ic{font-size:15px}
+  .rb-stat .v{font-size:15px; font-weight:800; font-family:'Sora',sans-serif}
+  .rb-stat .k{font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted)}
+  .rb-hint{font-size:11px; color:var(--muted); text-align:right; max-width:180px; line-height:1.35}
+
+  .carousel{display:flex; align-items:center; gap:8px}
+  .car-btn{background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:10px; width:34px; height:34px; flex:none; cursor:pointer}
+  .car-btn:hover{border-color:var(--accent)}
+  .car-track{display:flex; gap:10px; overflow-x:auto; flex:1; scroll-behavior:smooth; padding:2px}
+  .car-item{
+    flex:none; min-width:150px; background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:9px 14px; display:flex; align-items:center; gap:10px; cursor:pointer;
+  }
+  .car-item .ic{font-size:15px}
+  .car-item .txt .n{font-size:11.5px; font-weight:700}
+  .car-item .txt .m{font-size:10px; color:var(--muted)}
+  .car-item.conquered{border-color:var(--good); background:var(--good-dim)}
+  .car-item.active{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent-dim)}
+  .car-item.locked{opacity:.5}
+
+  /* ---------- placeholder panel for other nav sections ---------- */
+  .placeholder-view{
+    display:none; flex:1; align-items:center; justify-content:center; flex-direction:column; gap:12px;
+    color:var(--muted); text-align:center; padding:40px;
+  }
+  .placeholder-view.show{display:flex}
+  .placeholder-view .ic{font-size:46px; opacity:.6}
+  .placeholder-view h3{color:var(--text); font-size:20px}
+  .placeholder-view p{font-size:13px; max-width:360px; line-height:1.5}
+  .placeholder-view .tag{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); background:var(--surface); border:1px solid var(--accent-dim); padding:4px 10px; border-radius:999px}
+
+  /* ---------- config modal (reused from Comercial ao Vivo) ---------- */
+  .modal-bg{position:fixed; inset:0; background:rgba(4,6,12,.72); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px}
+  .modal-bg[hidden]{display:none}
+  .modal{background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:24px; width:min(680px,100%); max-height:88vh; overflow:auto}
+  .modal h2{font-size:18px; margin-bottom:4px}
+  .modal .desc{font-size:12.5px; color:var(--muted); margin-bottom:18px}
+  .cfg-group{margin-bottom:16px}
+  .cfg-group .gt{font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--accent); font-weight:700; margin-bottom:8px}
+  .cfg-fields{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .cfg-fields.cols-3{grid-template-columns:1fr 1fr 1fr}
+  .cfg-fields label{display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted)}
+  .cfg-fields input{background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:18px}
+  .btn{border-radius:10px; padding:10px 18px; font-weight:700; font-size:13px; cursor:pointer; border:1px solid var(--border); background:var(--surface-2); color:var(--text)}
+  .btn.primary{background:var(--accent); color:#1a1305; border-color:var(--accent)}
+  button:focus-visible, input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  .limits-note{font-size:10.5px; color:var(--muted-2); line-height:1.5; padding:0 2px}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="sb-logo"><span class="dot"></span> o<span style="color:var(--accent)">.</span>crm</div>
+    <nav class="sb-nav" id="sbNav">
+      <button class="sb-item active" data-view="territorios"><span class="ic">👑</span><span class="lbl">Territórios dominados</span></button>
+      <button class="sb-item" data-view="visao"><span class="ic">🏠</span><span class="lbl">Visão geral</span></button>
+      <button class="sb-item" data-view="metas"><span class="ic">🎯</span><span class="lbl">Metas</span></button>
+      <button class="sb-item" data-view="clientes"><span class="ic">👤</span><span class="lbl">Clientes</span></button>
+      <button class="sb-item" data-view="pipeline"><span class="ic">🔻</span><span class="lbl">Pipeline</span></button>
+      <button class="sb-item" data-view="relatorios"><span class="ic">📊</span><span class="lbl">Relatórios</span></button>
+    </nav>
+    <div class="sb-foot lbl">Estratégia comercial<br>em ação</div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <div class="main">
+
+    <div class="topbar">
+      <div class="title-block">
+        <div class="crown-badge">👑</div>
+        <div>
+          <h1>Territórios Dominados</h1>
+          <div class="sub">O.CRM · Outbound Clientes</div>
+        </div>
+      </div>
+      <div class="tagline">👑 Mais clientes. Mais receita.<br><b>Mais territórios para conquistar.</b></div>
+    </div>
+
+    <div class="status-row">
+      <div class="clock-inline">
+        <div class="block"><div class="k">Mês</div><div class="v" id="monthLabel">—</div></div>
+        <div class="block"><div class="k">Dias úteis</div><div class="v" id="daysLabel">—</div></div>
+        <div class="block"><div class="k">Agora</div><div class="v" id="clockLabel">—</div></div>
+        <div class="block"><div class="k">Snapshot</div><div class="v staleness" id="stalenessLabel" style="font-size:11px;font-weight:600">—</div></div>
+      </div>
+      <div class="status-actions">
+        <button class="refresh-btn" id="refreshBtn" title="Os números são um snapshot manual do OCRM">⟳ Atualizar</button>
+        <button class="cfg-btn" id="cfgBtn" title="Configurar metas e degraus do reino">⚙</button>
+      </div>
+    </div>
+
+    <!-- ===== TERRITÓRIOS view ===== -->
+    <div class="body-grid" id="view-territorios">
+      <div class="map-stage" id="mapStage">
+        <img id="mapImg" src="assets/mapa-reino.jpg" alt="Mapa do reino com 6 castelos"
+             onerror="this.remove(); document.getElementById('mapFallback').classList.add('show')">
+        <div class="map-fallback" id="mapFallback">
+          <svg viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="sky" cx="50%" cy="10%" r="90%">
+                <stop offset="0%" stop-color="#2c4d73"/>
+                <stop offset="55%" stop-color="#16283f"/>
+                <stop offset="100%" stop-color="#0a1524"/>
+              </radialGradient>
+              <linearGradient id="land1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#3c6b4a"/><stop offset="100%" stop-color="#274a34"/>
+              </linearGradient>
+              <linearGradient id="land2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#7a6a3a"/><stop offset="100%" stop-color="#584c28"/>
+              </linearGradient>
+              <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1c4a63"/><stop offset="100%" stop-color="#0d2c3d"/>
+              </linearGradient>
+            </defs>
+            <rect width="1200" height="760" fill="url(#sky)"/>
+            <ellipse cx="600" cy="420" rx="560" ry="300" fill="url(#water)"/>
+            <path d="M120 180 Q260 90 430 170 Q560 220 480 330 Q380 420 240 380 Q100 330 120 180Z" fill="url(#land1)"/>
+            <path d="M700 150 Q900 90 1040 200 Q1080 300 960 340 Q800 370 720 280 Q660 210 700 150Z" fill="url(#land1)"/>
+            <path d="M420 330 Q560 300 640 380 Q660 470 540 480 Q420 470 400 400 Q390 350 420 330Z" fill="url(#land2)"/>
+            <path d="M180 460 Q320 420 380 520 Q380 610 260 620 Q140 610 130 520 Q130 480 180 460Z" fill="#5a2f33"/>
+            <path d="M640 460 Q800 420 900 500 Q920 590 780 610 Q640 600 610 520 Q610 480 640 460Z" fill="#4a2f5a"/>
+            <path d="M950 440 Q1100 420 1150 520 Q1140 600 1000 610 Q880 590 890 500 Q900 460 950 440Z" fill="#8a95a8"/>
+            <circle cx="270" cy="250" r="5" fill="#e8e2c8"/>
+            <circle cx="880" cy="230" r="5" fill="#e8e2c8"/>
+            <circle cx="520" cy="390" r="5" fill="#e8e2c8"/>
+            <circle cx="260" cy="530" r="5" fill="#e8e2c8"/>
+            <circle cx="760" cy="520" r="5" fill="#e8e2c8"/>
+            <circle cx="1020" cy="510" r="5" fill="#e8e2c8"/>
+          </svg>
+        </div>
+        <div class="map-vignette"></div>
+        <!-- state cards injected by JS -->
+        <div id="stateCards"></div>
+      </div>
+
+      <aside class="side-panel">
+        <h2>👑 Visão Geral</h2>
+        <div class="sp-progress">
+          <div class="lbl">Progresso geral (todos os estados)</div>
+          <div class="sp-progress-track"><div class="sp-progress-fill" id="spProgressFill" style="width:0%"></div></div>
+          <div class="sp-progress-pct" id="spProgressPct">0%</div>
+        </div>
+        <div class="sp-kpis" id="spKpis"></div>
+        <div>
+          <h2 style="margin-bottom:8px">🛡 Estados</h2>
+          <div class="sp-states" id="spStates"></div>
+        </div>
+        <div class="limits-note" id="limitsNote"></div>
+      </aside>
+    </div>
+
+    <!-- ===== placeholder views ===== -->
+    <div class="placeholder-view" id="view-visao"><div class="ic">🏠</div><span class="tag">Em breve</span><h3>Visão Geral</h3><p>Painel consolidado com todos os indicadores comerciais em um só lugar. Ainda não conectado a dados reais.</p></div>
+    <div class="placeholder-view" id="view-metas"><div class="ic">🎯</div><span class="tag">Em breve</span><h3>Metas</h3><p>Gestão detalhada das metas do time — hoje configuráveis pelo botão ⚙ no topo.</p></div>
+    <div class="placeholder-view" id="view-clientes"><div class="ic">👤</div><span class="tag">Em breve</span><h3>Clientes</h3><p>Base de clientes ativos, saúde de conta e histórico — em construção.</p></div>
+    <div class="placeholder-view" id="view-pipeline"><div class="ic">🔻</div><span class="tag">Em breve</span><h3>Pipeline</h3><p>Funil de vendas por etapa do pipeline Outbound Clientes — em construção.</p></div>
+    <div class="placeholder-view" id="view-relatorios"><div class="ic">📊</div><span class="tag">Em breve</span><h3>Relatórios</h3><p>Relatórios exportáveis de performance comercial — em construção.</p></div>
+
+    <!-- ===== bottom: reino bar + carousel (only on territorios view) ===== -->
+    <div class="bottom-wrap" id="bottomWrap">
+      <div class="reino-bar">
+        <div class="rb-title"><span class="ic">👑</span><div><div class="t1">Total do Reino</div><div class="t2">Todos os estados</div></div></div>
+        <div class="rb-stats" id="reinoStats"></div>
+        <div class="rb-hint" id="reinoHint">🧭 O próximo território pode ser o seu maior resultado.</div>
+      </div>
+      <div class="carousel">
+        <button class="car-btn" id="carPrev">‹</button>
+        <div class="car-track" id="carTrack"></div>
+        <button class="car-btn" id="carNext">›</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== config modal ===== -->
+<div class="modal-bg" id="cfgModalBg" hidden>
+  <div class="modal">
+    <h2>Configurar metas do reino</h2>
+    <div class="desc">Estes valores não vêm do OCRM — defina as metas do time. Ficam salvos neste navegador (localStorage).</div>
+
+    <div class="cfg-group">
+      <div class="gt">Degraus de MRR dos 6 estados (R$)</div>
+      <div class="cfg-fields cols-3">
+        <label>Estado 1 <input type="number" id="cfg_e1" min="0" step="100"></label>
+        <label>Estado 2 <input type="number" id="cfg_e2" min="0" step="100"></label>
+        <label>Estado 3 <input type="number" id="cfg_e3" min="0" step="100"></label>
+        <label>Estado 4 <input type="number" id="cfg_e4" min="0" step="100"></label>
+        <label>Estado 5 <input type="number" id="cfg_e5" min="0" step="100"></label>
+        <label>Estado 6 <input type="number" id="cfg_e6" min="0" step="100"></label>
+      </div>
+    </div>
+
+    <div class="cfg-group">
+      <div class="gt">Metas mensais</div>
+      <div class="cfg-fields">
+        <label>Faturamento total (R$) <input type="number" id="cfg_fat" min="0" step="100"></label>
+        <label>Novo MRR (R$) <input type="number" id="cfg_mrr" min="0" step="100"></label>
+        <label>Implementação (R$) <input type="number" id="cfg_impl" min="0" step="100"></label>
+        <label>Novos clientes (qtd) <input type="number" id="cfg_clientes" min="0" step="1"></label>
+        <label>Churn máximo aceitável (%) <input type="number" id="cfg_churn" min="0" step="0.1"></label>
+      </div>
+    </div>
+    <div class="cfg-group">
+      <div class="gt">Metas de atividade diária</div>
+      <div class="cfg-fields">
+        <label>Ligações / dia <input type="number" id="cfg_ligacoes" min="0" step="1"></label>
+        <label>Reuniões agendadas / dia <input type="number" id="cfg_reunioes" min="0" step="1"></label>
+      </div>
+    </div>
+    <div class="cfg-group">
+      <div class="gt">Metas de atividade mensal</div>
+      <div class="cfg-fields">
+        <label>Ligações / mês <input type="number" id="cfg_ligacoes_mes" min="0" step="1"></label>
+        <label>Reuniões agendadas / mês <input type="number" id="cfg_reunioes_mes" min="0" step="1"></label>
+      </div>
+    </div>
+    <div class="cfg-group">
+      <div class="gt">Meta semanal</div>
+      <div class="cfg-fields">
+        <label>Vendas fechadas / semana <input type="number" id="cfg_vendas_semana" min="0" step="1"></label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cfgCancel">Cancelar</button>
+      <button class="btn primary" id="cfgSave">Salvar metas</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Real OCRM snapshot (pipeline 35 "Outbound Clientes"), reused verbatim from
+  // o painel "Comercial ao Vivo" original — mesmos números, mesma origem, nada inventado. ----------
+  var SNAPSHOT = {
+    capturedAt: "2026-09-17T17:10:00-03:00",
+    today: "2026-09-17",
+    wonDeals: [
+      {id:17610, valor:240.01,  data:"2026-09-11"},
+      {id:17538, valor:597.01,  data:"2026-09-04"},
+      {id:17472, valor:4777.03, data:"2026-09-16"},
+      {id:17420, valor:294.00,  data:"2026-09-03"},
+      {id:17272, valor:197.00,  data:"2026-08-25"},
+      {id:17264, valor:294.00,  data:"2026-08-25"},
+      {id:16951, valor:294.00,  data:"2026-08-25"},
+      {id:16815, valor:6010.02, data:"2026-09-14"},
+      {id:14291, valor:200.00,  data:"2026-07-17"},
+      {id:14243, valor:200.00,  data:"2026-07-15"},
+      {id:14209, valor:200.00,  data:"2026-07-15"},
+      {id:14070, valor:200.00,  data:"2026-08-12"},
+      {id:14041, valor:300.00,  data:"2026-07-08"},
+      {id:13927, valor:200.00,  data:"2026-07-16"},
+      {id:13880, valor:200.00,  data:"2026-07-06"},
+      {id:13872, valor:200.00,  data:"2026-06-29"},
+      {id:13870, valor:200.00,  data:"2026-06-29"},
+      {id:6227,  valor:200.00,  data:"2026-03-18"},
+      {id:19,    valor:450.00,  data:"2025-12-01"}
+    ],
+    activityToday: { ligacoesRealizadas: 25, ligacoesFonte: "API4com (telefonia integrada)", reunioesRealizadas: 1 },
+    activityMonth: { ligacoesRealizadas: 813, reunioesRealizadas: 6 },
+    // MRR/Implementação não têm split por produto no OCRM (valor_total_recorrente e
+    // valor_nao_recorrente = 0 em 100% dos negócios desta amostra). Informado manualmente pelo
+    // gestor comercial para setembro/2026 — mesmos valores do painel original.
+    mesManual: { mrrRealizado: 3101.99, implRealizado: 8816.00 }
+  };
+
+  var DEFAULT_TARGETS = {
+    fat: 50000, mrr: 8000, impl: 5000, clientes: 15, churn: 3,
+    ligacoes: 60, reunioes: 10, vendas_semana: 10,
+    ligacoes_mes: 1200, reunioes_mes: 20,
+    estados: [5000, 10000, 20000, 40000, 80000, 160000]
+  };
+
+  var STORAGE_KEY = "reino_tv_targets";
+
+  function loadTargets(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        var merged = Object.assign({}, DEFAULT_TARGETS, parsed);
+        if(!Array.isArray(merged.estados) || merged.estados.length!==6) merged.estados = DEFAULT_TARGETS.estados.slice();
+        return merged;
+      }
+    }catch(e){}
+    return JSON.parse(JSON.stringify(DEFAULT_TARGETS));
+  }
+  function saveTargets(t){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(t)); }catch(e){} }
+
+  var fmtBRL = function(v){
+    if(v===null || v===undefined) return "sem dado";
+    return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
+  };
+  var fmtPct1 = function(v){ return (v*100).toFixed(1).replace('.', ',') + '%'; };
+  var fmtPct0 = function(v){ return Math.round(v*100) + '%'; };
+
+  var BUSINESS_DAYS_PER_MONTH = 22; // fixo, a pedido do gestor — mesma regra do painel original
+
+  function computeTimeContext(now){
+    var y=now.getFullYear(), m=now.getMonth();
+    var dayOfMonth = now.getDate();
+    var elapsedBiz=0;
+    for(var d=1; d<=dayOfMonth; d++){
+      var wd = new Date(y,m,d).getDay();
+      if(wd!==0 && wd!==6) elapsedBiz++;
+    }
+    var totalBiz = BUSINESS_DAYS_PER_MONTH;
+    var pctElapsed = Math.min(1, elapsedBiz/totalBiz);
+    var monthNames=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+    return { y:y, m:m, dayOfMonth:dayOfMonth, pctElapsed:pctElapsed, elapsedBiz:elapsedBiz, totalBiz:totalBiz,
+      remainingBiz: Math.max(0,totalBiz-elapsedBiz), label: monthNames[m]+" "+y };
+  }
+
+  var STATE_NAMES = ["Base da Expansão","Crescimento Acelerado","Consolidação","Escala e Eficiência","Liderança de Mercado","Domínio Total"];
+  var STATE_ANCHORS = [ // % posicionado sobre o map-stage, ajustado ao layout de referência
+    {left:'4%',  top:'14%'},
+    {left:'54%', top:'10%'},
+    {left:'28%', top:'40%'},
+    {left:'2%',  top:'58%'},
+    {left:'46%', top:'58%'},
+    {left:'74%', top:'46%'}
+  ];
+
+  var carouselIndex = 0;
+
+  function render(){
+    var now = new Date();
+    var tc = computeTimeContext(now);
+    var targets = loadTargets();
+
+    document.getElementById('monthLabel').textContent = tc.label;
+    document.getElementById('daysLabel').textContent = tc.elapsedBiz+"/"+tc.totalBiz;
+    document.getElementById('clockLabel').textContent = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+
+    var capturedAt = new Date(SNAPSHOT.capturedAt);
+    var ageMin = Math.round((now - capturedAt)/60000);
+    var staleEl = document.getElementById('stalenessLabel');
+    staleEl.textContent = "há "+ageMin+" min";
+    staleEl.title = "Snapshot manual capturado em "+capturedAt.toLocaleString('pt-BR');
+    staleEl.className = "v staleness"+(ageMin>240?" stale":"");
+
+    // ---- real aggregate figures for the current month (idêntico ao painel original) ----
+    var monthWon = SNAPSHOT.wonDeals.filter(function(w){
+      var d = new Date(w.data+"T00:00:00");
+      return d.getFullYear()===tc.y && d.getMonth()===tc.m;
+    });
+    var fatRealizado = monthWon.reduce(function(a,w){return a+w.valor;},0);
+    var mrrRealizado = SNAPSHOT.mesManual.mrrRealizado; // único valor real de MRR disponível no OCRM
+    var clientesRealizado = monthWon.length;
+    var ticketMedio = clientesRealizado>0 ? fatRealizado/clientesRealizado : 0;
+
+    // ---- degrau (estado) logic ----
+    var estados = targets.estados;
+    var firstUnconquered = -1;
+    var statuses = estados.map(function(deg, i){
+      var pct = deg>0 ? Math.min(1, mrrRealizado/deg) : 0;
+      var conquered = mrrRealizado >= deg;
+      if(!conquered && firstUnconquered===-1) firstUnconquered = i;
+      return {deg:deg, pct:pct, conquered:conquered};
+    });
+    statuses.forEach(function(s, i){
+      s.status = s.conquered ? 'conquered' : (i===firstUnconquered ? 'active' : 'locked');
+    });
+    var conqueredCount = statuses.filter(function(s){return s.conquered;}).length;
+    var overallProgress = conqueredCount<6
+      ? (conqueredCount + statuses[firstUnconquered===-1?5:firstUnconquered].pct) / 6
+      : 1;
+
+    // ---- state cards on the map ----
+    var cardsHtml = statuses.map(function(s, i){
+      var anchor = STATE_ANCHORS[i];
+      var icon = s.status==='conquered' ? '👑' : (s.status==='active' ? '⚔️' : '🔒');
+      return '<div class="state-card '+s.status+'" style="left:'+anchor.left+'; top:'+anchor.top+'">'+
+        '<div class="sc-head"><div><div class="sc-name">ESTADO '+(i+1)+'</div><div class="sc-sub">'+STATE_NAMES[i]+'</div></div><div class="sc-badge">'+icon+'</div></div>'+
+        '<div class="sc-row"><span>MRR Total</span><b>'+fmtBRL(mrrRealizado)+'</b></div>'+
+        '<div class="sc-row"><span>Novo MRR</span><b>'+fmtBRL(mrrRealizado)+'</b></div>'+
+        '<div class="sc-row"><span>Clientes</span><b>'+clientesRealizado+'</b></div>'+
+        '<div class="sc-row"><span>Faturamento Novo</span><b>'+fmtBRL(fatRealizado)+'</b></div>'+
+        '<div class="sc-row"><span>Ticket Médio</span><b>'+fmtBRL(ticketMedio)+'</b></div>'+
+        '<div class="sc-bar"><div class="sc-bar-fill" style="width:'+Math.min(100,s.pct*100)+'%"></div></div>'+
+        '<div class="sc-pct">Meta '+fmtBRL(s.deg)+' · '+fmtPct0(s.pct)+'</div>'+
+      '</div>';
+    }).join('');
+    document.getElementById('stateCards').innerHTML = cardsHtml;
+
+    // ---- Visão Geral (right panel) ----
+    document.getElementById('spProgressFill').style.width = Math.min(100, overallProgress*100)+'%';
+    document.getElementById('spProgressPct').textContent = fmtPct0(overallProgress);
+
+    document.getElementById('spKpis').innerHTML =
+      spKpi('👑','MRR Total', fmtBRL(mrrRealizado)) +
+      spKpi('📈','Novo MRR', fmtBRL(mrrRealizado)) +
+      spKpi('🧑‍🤝‍🧑','Clientes', clientesRealizado) +
+      spKpi('📄','Fat. Total Novo', fmtBRL(fatRealizado)) +
+      spKpi('🪙','Ticket Médio', fmtBRL(ticketMedio));
+
+    document.getElementById('spStates').innerHTML = statuses.map(function(s,i){
+      var badge = s.status==='conquered' ? '👑' : (s.status==='active' ? '⚔️' : '🔒');
+      return '<div class="sp-state-row '+(s.status==='locked'?'locked':'')+'"><span class="badge">'+badge+'</span><span class="name">Estado '+(i+1)+'</span><span class="pct">'+fmtPct0(s.pct)+'</span></div>';
+    }).join('');
+
+    document.getElementById('limitsNote').innerHTML =
+      'MRR Total/Novo MRR = valor real informado pelo gestor p/ '+tc.label+' (OCRM não separa MRR de implantação por negócio); '+
+      'os 6 estados comparam esse mesmo total real contra cada degrau de meta — o OCRM não segmenta dados por território.';
+
+    // ---- Total do Reino (bottom bar) ----
+    document.getElementById('reinoStats').innerHTML =
+      rbStat('👑','MRR Total', fmtBRL(mrrRealizado)) +
+      rbStat('📈','Novo MRR', fmtBRL(mrrRealizado)) +
+      rbStat('🧑‍🤝‍🧑','Clientes', clientesRealizado) +
+      rbStat('📄','Faturamento Total Novo', fmtBRL(fatRealizado)) +
+      rbStat('🪙','Ticket Médio', fmtBRL(ticketMedio));
+
+    // ---- Carousel ----
+    document.getElementById('carTrack').innerHTML = statuses.map(function(s,i){
+      var icon = s.status==='conquered' ? '✅' : (s.status==='active' ? '⚔️' : '🔒');
+      return '<div class="car-item '+s.status+' '+(i===carouselIndex?'active':'')+'" data-idx="'+i+'">'+
+        '<span class="ic">'+icon+'</span><div class="txt"><div class="n">Estado '+(i+1)+'</div><div class="m">'+fmtBRL(s.deg)+' · '+fmtPct0(s.pct)+'</div></div>'+
+      '</div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.car-item'), function(el){
+      el.addEventListener('click', function(){
+        carouselIndex = Number(el.getAttribute('data-idx'));
+        render();
+      });
+    });
+  }
+
+  function spKpi(icon,label,val){
+    return '<div class="sp-kpi"><div class="ic">'+icon+'</div><div class="v">'+val+'</div><div class="k">'+label+'</div></div>';
+  }
+  function rbStat(icon,label,val){
+    return '<div class="rb-stat"><span class="ic">'+icon+'</span><div><div class="v">'+val+'</div><div class="k">'+label+'</div></div></div>';
+  }
+
+  // ---------- navigation ----------
+  var VIEWS = ['territorios','visao','metas','clientes','pipeline','relatorios'];
+  function setView(view){
+    Array.prototype.forEach.call(document.querySelectorAll('.sb-item'), function(el){
+      el.classList.toggle('active', el.getAttribute('data-view')===view);
+    });
+    document.getElementById('view-territorios').style.display = view==='territorios' ? 'grid' : 'none';
+    document.getElementById('bottomWrap').style.display = view==='territorios' ? 'flex' : 'none';
+    VIEWS.filter(function(v){return v!=='territorios';}).forEach(function(v){
+      document.getElementById('view-'+v).classList.toggle('show', v===view);
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.sb-item'), function(el){
+    el.addEventListener('click', function(){ setView(el.getAttribute('data-view')); });
+  });
+
+  // ---------- carousel scroll buttons ----------
+  document.getElementById('carPrev').addEventListener('click', function(){
+    document.getElementById('carTrack').scrollBy({left:-170, behavior:'smooth'});
+  });
+  document.getElementById('carNext').addEventListener('click', function(){
+    document.getElementById('carTrack').scrollBy({left:170, behavior:'smooth'});
+  });
+
+  // ---------- config modal ----------
+  var modalBg = document.getElementById('cfgModalBg');
+  function openModal(){
+    var t = loadTargets();
+    document.getElementById('cfg_e1').value = t.estados[0];
+    document.getElementById('cfg_e2').value = t.estados[1];
+    document.getElementById('cfg_e3').value = t.estados[2];
+    document.getElementById('cfg_e4').value = t.estados[3];
+    document.getElementById('cfg_e5').value = t.estados[4];
+    document.getElementById('cfg_e6').value = t.estados[5];
+    document.getElementById('cfg_fat').value = t.fat;
+    document.getElementById('cfg_mrr').value = t.mrr;
+    document.getElementById('cfg_impl').value = t.impl;
+    document.getElementById('cfg_clientes').value = t.clientes;
+    document.getElementById('cfg_churn').value = t.churn;
+    document.getElementById('cfg_ligacoes').value = t.ligacoes;
+    document.getElementById('cfg_reunioes').value = t.reunioes;
+    document.getElementById('cfg_vendas_semana').value = t.vendas_semana;
+    document.getElementById('cfg_ligacoes_mes').value = t.ligacoes_mes;
+    document.getElementById('cfg_reunioes_mes').value = t.reunioes_mes;
+    modalBg.hidden = false;
+  }
+  document.getElementById('cfgBtn').addEventListener('click', openModal);
+  document.getElementById('cfgCancel').addEventListener('click', function(){ modalBg.hidden = true; });
+  modalBg.addEventListener('click', function(e){ if(e.target===modalBg) modalBg.hidden = true; });
+  document.getElementById('cfgSave').addEventListener('click', function(){
+    var t = {
+      estados: [
+        Number(document.getElementById('cfg_e1').value)||0,
+        Number(document.getElementById('cfg_e2').value)||0,
+        Number(document.getElementById('cfg_e3').value)||0,
+        Number(document.getElementById('cfg_e4').value)||0,
+        Number(document.getElementById('cfg_e5').value)||0,
+        Number(document.getElementById('cfg_e6').value)||0
+      ],
+      fat: Number(document.getElementById('cfg_fat').value)||0,
+      mrr: Number(document.getElementById('cfg_mrr').value)||0,
+      impl: Number(document.getElementById('cfg_impl').value)||0,
+      clientes: Number(document.getElementById('cfg_clientes').value)||0,
+      churn: Number(document.getElementById('cfg_churn').value)||0,
+      ligacoes: Number(document.getElementById('cfg_ligacoes').value)||0,
+      reunioes: Number(document.getElementById('cfg_reunioes').value)||0,
+      vendas_semana: Number(document.getElementById('cfg_vendas_semana').value)||0,
+      ligacoes_mes: Number(document.getElementById('cfg_ligacoes_mes').value)||0,
+      reunioes_mes: Number(document.getElementById('cfg_reunioes_mes').value)||0
+    };
+    saveTargets(t);
+    modalBg.hidden = true;
+    render();
+  });
+  document.getElementById('refreshBtn').addEventListener('click', render);
+
+  render();
+  setInterval(render, 60000);
+})();
+</script>
+
+</body>
+</html>
