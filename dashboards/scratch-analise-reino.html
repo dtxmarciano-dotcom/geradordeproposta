@@ -1,0 +1,219 @@
+<title>Rota do Reino</title>
+<style>
+  :root{
+    --bg:#0a0e17; --surface:#121828; --surface-2:#182140; --border:#232d49;
+    --text:#eef1f8; --muted:#9aa4c2; --muted-2:#5d6688;
+    --accent:#f2b84b; --accent-2:#d89b2c; --accent-dim:#3a2c0d;
+    --good:#34d399; --good-dim:#0d3327;
+    --blue:#5aa4ff;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:'Inter',system-ui,sans-serif;
+    padding:32px clamp(16px,4vw,56px) 48px; font-variant-numeric:tabular-nums}
+  h1,h2,h3{font-family:'Sora',system-ui,sans-serif; margin:0; text-wrap:balance}
+  .wrap{max-width:1180px; margin:0 auto}
+
+  .hero{display:grid; grid-template-columns:1.3fr 1fr; gap:28px; align-items:stretch; margin-bottom:36px}
+  @media (max-width:820px){.hero{grid-template-columns:1fr}}
+
+  .hero-left{
+    background:linear-gradient(155deg,var(--surface),var(--surface-2));
+    border:1px solid var(--border); border-radius:20px; padding:30px 32px;
+    display:flex; flex-direction:column; justify-content:center; gap:14px;
+  }
+  .eyebrow{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); font-weight:700}
+  .hero-left h1{font-size:clamp(26px,3.4vw,38px); font-weight:800; line-height:1.08}
+  .hero-left .sub{font-size:14px; color:var(--muted); max-width:44ch; line-height:1.55}
+  .hero-stats{display:flex; gap:28px; margin-top:10px; flex-wrap:wrap}
+  .hero-stat .v{font-size:26px; font-weight:800; font-family:'Sora',sans-serif}
+  .hero-stat .v.accent{color:var(--accent)}
+  .hero-stat .k{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-top:2px}
+
+  .hero-right{
+    background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:26px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; position:relative;
+  }
+  .ring-wrap{position:relative; width:180px; height:180px}
+  .ring-wrap svg{width:100%; height:100%}
+  .ring-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center}
+  .ring-center .pct{font-size:34px; font-weight:800; font-family:'Sora',sans-serif; color:var(--accent)}
+  .ring-center .lbl{font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-top:2px}
+  .ring-caption{font-size:12px; color:var(--muted); text-align:center; max-width:220px; line-height:1.5}
+  .teto-pill{
+    display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--accent-dim);
+    border-radius:999px; padding:7px 16px; font-size:12px; font-weight:700; color:var(--accent);
+  }
+
+  section{margin-bottom:34px}
+  .sec-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; gap:12px; flex-wrap:wrap}
+  .sec-head h2{font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+  .sec-head .hint{font-size:12px; color:var(--muted-2)}
+
+  /* ---- ladder (staircase) ---- */
+  .ladder{display:flex; flex-direction:column; gap:10px}
+  .rung{
+    display:grid; grid-template-columns:120px 1fr 190px; align-items:center; gap:16px;
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 18px;
+  }
+  .rung.active{border-color:var(--accent)}
+  .rung.conquered{border-color:var(--good)}
+  @media (max-width:760px){ .rung{grid-template-columns:1fr; gap:8px} .rung .r-track-wrap{order:3} .rung .r-meta{order:2} }
+
+  .r-id{display:flex; flex-direction:column; gap:2px}
+  .r-id .n{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700}
+  .r-id .name{font-size:13.5px; font-weight:800; font-family:'Sora',sans-serif}
+  .r-id .badge{font-size:16px; margin-top:2px}
+
+  .r-track-wrap{display:flex; flex-direction:column; gap:6px}
+  .r-track{position:relative; height:14px; border-radius:8px; background:var(--surface-2); border:1px solid var(--border); overflow:hidden}
+  .r-fill{height:100%; border-radius:8px; background:linear-gradient(90deg,var(--blue),#8ec4ff)}
+  .rung.active .r-fill{background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+  .rung.conquered .r-fill{background:linear-gradient(90deg,#1c8a5e,var(--good))}
+  .r-scale{display:flex; justify-content:space-between; font-size:10px; color:var(--muted-2)}
+
+  .r-meta{text-align:right; display:flex; flex-direction:column; gap:2px}
+  .r-meta .pct{font-size:18px; font-weight:800; font-family:'Sora',sans-serif}
+  .rung.active .r-meta .pct{color:var(--accent)}
+  .rung.conquered .r-meta .pct{color:var(--good)}
+  .r-meta .falta{font-size:11px; color:var(--muted)}
+  .r-meta .meta-v{font-size:10.5px; color:var(--muted-2)}
+
+  .teto-row{
+    display:flex; align-items:center; gap:12px; margin-top:6px; padding:12px 18px;
+    background:var(--surface-2); border:1px dashed var(--accent-dim); border-radius:14px;
+    font-size:12px; color:var(--muted);
+  }
+  .teto-row b{color:var(--accent)}
+
+  /* ---- reino totals ---- */
+  .totals-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:14px}
+  @media (max-width:900px){.totals-grid{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:480px){.totals-grid{grid-template-columns:1fr}}
+  .t-card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px}
+  .t-card .ic{font-size:16px}
+  .t-card .v{font-size:19px; font-weight:800; font-family:'Sora',sans-serif; margin-top:8px}
+  .t-card .k{font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-top:3px}
+
+  footer{font-size:11px; color:var(--muted-2); line-height:1.6; border-top:1px solid var(--border); padding-top:16px; margin-top:8px}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-left">
+      <div class="eyebrow">👑 Rota do Reino · Outbound Clientes</div>
+      <h1>Onde estamos e onde queremos chegar</h1>
+      <p class="sub">O reino avança em 6 degraus de MRR. Hoje já conquistamos parte do 1º território — a leitura abaixo mostra a distância real, degrau a degrau, até o teto de R$ 160.000 de MRR.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="v accent" id="hMrr">—</div><div class="k">MRR realizado hoje</div></div>
+        <div class="hero-stat"><div class="v" id="hTeto">—</div><div class="k">Teto do reino (Estado 6)</div></div>
+        <div class="hero-stat"><div class="v" id="hFalta">—</div><div class="k">Falta para o teto</div></div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="68" fill="none" stroke="var(--surface-2)" stroke-width="14"/>
+          <circle id="ringFill" cx="80" cy="80" r="68" fill="none" stroke="var(--accent)" stroke-width="14"
+            stroke-linecap="round" transform="rotate(-90 80 80)"/>
+        </svg>
+        <div class="ring-center"><div class="pct" id="ringPct">—</div><div class="lbl">do reino conquistado</div></div>
+      </div>
+      <div class="teto-pill">🏔️ Teto: <span id="tetoInline">—</span></div>
+      <div class="ring-caption">Progresso geral = estados totalmente conquistados + fração do estado em disputa, sobre os 6 estados do reino.</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <h2>Escada de conquista — os 6 estados</h2>
+      <span class="hint">Cada barra compara o MRR real do reino (R$ 3.101,99) contra a meta daquele degrau</span>
+    </div>
+    <div class="ladder" id="ladder"></div>
+    <div class="teto-row">🏔️ <span>O <b>Estado 6 — Domínio Total</b> é o teto do reino: <b id="tetoRowVal">—</b> de MRR. Ao conquistá-lo, os 6 territórios estarão dominados.</span></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Total do reino agora</h2>
+      <span class="hint">Mesmos números reais do painel Territórios Dominados — snapshot OCRM, sem projeção</span>
+    </div>
+    <div class="totals-grid" id="totalsGrid"></div>
+  </section>
+
+  <footer id="footNote"></footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // mesmos números reais usados no painel "Territórios Dominados" (nenhum valor novo)
+  var mrrRealizado = 3101.99;
+  var fatRealizado = 11918.07; // won deals de setembro/2026
+  var clientesRealizado = 5;
+  var ticketMedio = fatRealizado / clientesRealizado;
+  var estados = [5000, 10000, 20000, 40000, 80000, 160000];
+  var nomes = ["Base da Expansão","Crescimento Acelerado","Consolidação","Escala e Eficiência","Liderança de Mercado","Domínio Total"];
+
+  function fmtBRL(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}); }
+  function fmtBRL2(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2}); }
+  function pct0(v){ return Math.round(v*100)+'%'; }
+
+  var teto = estados[estados.length-1];
+  var firstUnconquered = -1;
+  var statuses = estados.map(function(deg,i){
+    var pct = Math.min(1, mrrRealizado/deg);
+    var conquered = mrrRealizado >= deg;
+    if(!conquered && firstUnconquered===-1) firstUnconquered = i;
+    return {deg:deg, pct:pct, conquered:conquered};
+  });
+  statuses.forEach(function(s,i){ s.status = s.conquered?'conquered':(i===firstUnconquered?'active':'locked'); });
+  var conqueredCount = statuses.filter(function(s){return s.conquered;}).length;
+  var overall = conqueredCount<6 ? (conqueredCount + statuses[firstUnconquered].pct)/6 : 1;
+
+  document.getElementById('hMrr').textContent = fmtBRL2(mrrRealizado);
+  document.getElementById('hTeto').textContent = fmtBRL(teto);
+  document.getElementById('hFalta').textContent = fmtBRL(teto - mrrRealizado);
+  document.getElementById('tetoInline').textContent = fmtBRL(teto);
+  document.getElementById('tetoRowVal').textContent = fmtBRL(teto);
+
+  var r = 68, c = 2*Math.PI*r;
+  var ringFill = document.getElementById('ringFill');
+  ringFill.setAttribute('stroke-dasharray', c);
+  ringFill.setAttribute('stroke-dashoffset', c*(1-overall));
+  document.getElementById('ringPct').textContent = pct0(overall);
+
+  document.getElementById('ladder').innerHTML = statuses.map(function(s,i){
+    var badge = s.status==='conquered' ? '👑' : (s.status==='active' ? '⚔️' : '🔒');
+    var falta = Math.max(0, s.deg - mrrRealizado);
+    var faltaTxt = s.conquered ? 'Conquistado' : ('Faltam '+fmtBRL(falta));
+    return '<div class="rung '+s.status+'">'+
+      '<div class="r-id"><div class="badge">'+badge+'</div><div class="n">Estado '+(i+1)+'</div><div class="name">'+nomes[i]+'</div></div>'+
+      '<div class="r-track-wrap">'+
+        '<div class="r-track"><div class="r-fill" style="width:'+Math.min(100,s.pct*100)+'%"></div></div>'+
+        '<div class="r-scale"><span>R$ 0</span><span>Meta '+fmtBRL(s.deg)+'</span></div>'+
+      '</div>'+
+      '<div class="r-meta"><div class="pct">'+pct0(s.pct)+'</div><div class="falta">'+faltaTxt+'</div><div class="meta-v">'+fmtBRL2(mrrRealizado)+' de '+fmtBRL(s.deg)+'</div></div>'+
+    '</div>';
+  }).join('');
+
+  document.getElementById('totalsGrid').innerHTML =
+    tCard('👑','MRR Total', fmtBRL2(mrrRealizado)) +
+    tCard('📈','Novo MRR', fmtBRL2(mrrRealizado)) +
+    tCard('🧑‍🤝‍🧑','Clientes (mês)', clientesRealizado) +
+    tCard('📄','Faturamento Novo', fmtBRL(fatRealizado)) +
+    tCard('🪙','Ticket Médio', fmtBRL(ticketMedio));
+
+  function tCard(icon,label,val){
+    return '<div class="t-card"><div class="ic">'+icon+'</div><div class="v">'+val+'</div><div class="k">'+label+'</div></div>';
+  }
+
+  document.getElementById('footNote').textContent =
+    'Fonte: OCRM · Pipeline 35 (Outbound Clientes) · snapshot manual 17/09/2026. Mesmos dados e degraus do painel Territórios Dominados — nenhum número foi projetado ou inventado.';
+})();
+</script>
